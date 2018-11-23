@@ -61,14 +61,18 @@ module GF_INV_4 ( A, Q );
   assign sa = a[1] ^ a[0];
   assign sb = b[1] ^ b[0];
   /* optimize this section as shown below
+  */
+  wire [1:0] ab, ab2, ab2N;
     GF_MULS_2 abmul(a, sa, b, sb, ab);
     GF_SQ_2 absq( (a ^ b), ab2);
     GF_SCLW2_2 absclN( ab2, ab2N);
     GF_SQ_2 dinv( (ab ^ ab2N), d);
-  */
-  assign c = { /* note: ~| syntax for NOR won’t compile */
-    ~(a[1] | b[1]) ^ (~(sa &  sb)) ,
-    ~(sa | sb) ^ (~(a[0] & b[0])) };
+
+//  assign c = { /* note: ~| syntax for NOR won’t compile */
+//    ~(a[1] | b[1]) ^ (~(sa &  sb)) ,
+//    ~(sa | sb) ^ (~(a[0] & b[0])) };
+
+
   /* end of optimization */
 
   assign sd = d[1] ^ d[0];
@@ -190,7 +194,7 @@ endmodule
 
 
 /* find either Sbox or its inverse in GF(2^8), by Canright Algorithm */
-module bSbox ( A, encrypt, Q );
+module canright_sbox ( A, encrypt, Q );
   input [7:0] A;
   input encrypt; /* 1 for Sbox, 0 for inverse Sbox */
   output [7:0] Q;
@@ -257,23 +261,4 @@ module bSbox ( A, encrypt, Q );
   assign X[1] = T6 ;
   assign X[0] = ~ C[2] ;
   SELECT_NOT_8 sel_out( D, X, encrypt, Q );
-endmodule
-
-/* test program: put Sbox output into register */
-module Sbox_r ( A, S, Si, CLK );
-  input [7:0] A;
-  output [7:0] S;
-  output [7:0] Si;
-  input CLK /* synthesis syn_noclockbuf=1 */ ;
-  reg    [7:0] S;
-  reg    [7:0] Si;
-  wire   [7:0] s;
-  wire   [7:0] si;
-  
-  bSbox sbe( A, 1, s  );
-  bSbox sbd( A, 0, si );
-  always @ (posedge CLK) begin
-    S <= s;
-    Si <= si;
-  end
 endmodule
